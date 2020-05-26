@@ -1,9 +1,11 @@
 <?php
 namespace App\Service;
 use App\Models\LotteryChannel;
+use App\Models\Lottery;
+use Log;
 class LotteryService {
 
-    public function __construct(Lottery $lottery)
+    public function __construct($lottery = [])
     {
         $this->lottery = $lottery;
     }
@@ -15,18 +17,37 @@ class LotteryService {
         $instances = $this->getInstances($instancesMap);    
         $mainInstance = '\App\LotteryInstance\\'.$instances['mainInstanceName'];
 
-        if (class_exists())
-        $mainInstance = app(\App\LotteryInstance\OneFakeLottery::class, ['lottery' => $this->lottery]);
+        if (!class_exists($mainInstance)) {
+            throw new \Exception("Not found 主彩源", 1);
+        }
+        
+        $mainInstance = app($mainInstance, ['lottery' => $this->lottery]);
         $mainResult = $mainInstance->getWinningNumber();
-        //
+        if (!$mainResult) {
+            throw new \Exception("Not found 主彩源還沒有資料", 1);
+        }
         $resultIsOk = false;
         
         foreach ($instancesMap as $key => $instanceName) {
-            $subInstance = app($instanceName, ['lottery' => $this->lottery]);
+            $instance = '\App\LotteryInstance\\'.$instances['mainInstanceName'];
+            if (!class_exists($instance)) {
+                Log::info('Log message', array('context' => '找不到副彩源:'.$instanceName));
+                continue;
+            }
+            $subInstance = app($instance, ['lottery' => $this->lottery]);
             $subResult = $subInstance->getWinningNumber();
-
+            //比对结果
+            if ($subResult['numbers'] === $mainResult['numbers']) {
+                $resultIsOk = true;
+                break;
+            }
+            
         }
-        
+        if ($resultIsOk) {
+            return $mainResult['numbers'];
+        } else {
+            throw new \Exception("主彩源無法比對任何副彩源", 1);
+        }
     }
     
     /**
@@ -39,7 +60,7 @@ class LotteryService {
         $mainInstanceName = null;
         $subInstaceNameList = [];
         foreach ($instancesMap as $key => $instance) {
-            if ($instance->slug == $this->lottery->gameId) { //如果指定的彩種跟當入的彩種一致的話，就設為主要彩源
+            if ($instance->master_game_id == $this->lottery->game_id) { //如果指定的彩種跟當入的彩種一致的話，就設為主要彩源
                 $mainInstanceName = $instance->slug;
             } else {
                 $subInstaceNameList[] = $instance->slug;

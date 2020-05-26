@@ -1,17 +1,18 @@
 <?php
 namespace App\LotteryInstance;
-use BaseLotteryCapturer;
+use App\LotteryInstance\BaseLotteryCapturer;
 use App\Models\LotteryResult;
 
+use App\Models\Lottery;
 class TwoFakeLottery extends BaseLotteryCapturer  {
 
     
     protected $gameKeyMap = [
-        self::KIND_CHONGQINGSHISHICAI = 'cqssc',
-        self::KIND_BEIJING = 'bj11x5';
+        self::KIND_CHONGQINGSHISHICAI => 'cqssc',
+        self::KIND_BEIJING => 'bj11x5',
     ]; 
     protected $resultColumnMapping = [
-        'issue_at' => 'expect'
+        'issue_at' => 'expect',
         'numbers' => 'opencode',
     ];  
     public function __construct(Lottery $lottery)
@@ -24,12 +25,12 @@ class TwoFakeLottery extends BaseLotteryCapturer  {
      */
     public function getWinningNumber()
     {
-        $gameKey = $this->gameKeyMap[$this->lottery->gameId] ?? '';
+        $gameKey = $this->gameKeyMap[$this->lottery->game_id] ?? '';
         if (!$gameKey) {
             throw new \Exception("Not found correct gameKey");
         }
         $urlParams = ['code' => $gameKey];
-        $url = 'https://two.fake/newly.do?'.http_build_query($urlParams);
+        $url = 'http://two.fake/newly.do?'.http_build_query($urlParams);
         $ch = curl_init();
         $options = [
                  CURLOPT_URL => $url,
@@ -45,7 +46,7 @@ class TwoFakeLottery extends BaseLotteryCapturer  {
         $result = json_decode($curlResult, true);
         $data = $result['data'];
         $formatResult = $this->formatResult($data);
-        return $formatResult[$this->lottery->issue];
+        return $formatResult[$this->lottery->issue] ?? '';
     }
 
     

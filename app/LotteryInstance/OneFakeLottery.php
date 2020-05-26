@@ -1,15 +1,16 @@
 <?php
 namespace App\LotteryInstance;
-use BaseLotteryCapturer;
+use App\LotteryInstance\BaseLotteryCapturer;
 use App\Models\LotteryResult;
+use App\Models\Lottery;
 
 class OneFakeLottery extends BaseLotteryCapturer  {
     protected $gameKeyMap = [
-        self::KIND_CHONGQINGSHISHICAI = 'ssc',
-        self::KIND_BEIJING = 'bjsyxw';
+        self::KIND_CHONGQINGSHISHICAI => 'ssc',
+        self::KIND_BEIJING => 'bjsyxw',
     ]; 
     protected $resultColumnMapping = [
-        'issue_at' => 'gid'
+        'issue_at' => 'gid',
         'numbers' => 'award',
     ];  
     public function __construct(Lottery $lottery)
@@ -22,17 +23,20 @@ class OneFakeLottery extends BaseLotteryCapturer  {
      */
     public function getWinningNumber()
     {
-        $gameKey = $this->gameKeyMap[$this->lottery->gameId] ?? '';
+
+        $gameKey = $this->gameKeyMap[$this->lottery->game_id] ?? '';
         if (!$gameKey) {
             throw new \Exception("Not found correct gameKey");
         }
-        $urlParams = ['gamekey' => $gameKey, 'issue' => $this->lottery->issue]
+        $urlParams = ['gamekey' => $gameKey, 'issue' => $this->lottery->issue];
         $url = 'http://one.fake/v1?'.http_build_query($urlParams);
+        
         $ch = curl_init();
         $options = [
                  CURLOPT_URL => $url,
                  CURLOPT_HEADER => false,
                  CURLOPT_POST => false ,
+                 CURLOPT_RETURNTRANSFER => true,
                 ];
 
         curl_setopt_array($ch, $options);
@@ -40,10 +44,13 @@ class OneFakeLottery extends BaseLotteryCapturer  {
         $output = curl_exec($ch); 
         curl_close($ch);
         $this->validCurlResult($output);
-        $result = json_decode($curlResult, true);
-        $data = $result['data'] ;
+        $result = json_decode($output, true);
+        
+        $data = $result['result']['data'] ;
+
         $formatResult = $this->formatResult($data);
-        return $formatResult[$this->lottery->issue];
+
+        return $formatResult[$this->lottery->issue] ?? '';
     }
 
     

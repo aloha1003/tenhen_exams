@@ -2,7 +2,8 @@
 namespace App\LotteryInstance;
 use App\Models\Lottery;
 use App\Contracts\LotteryKind;
-class BaseLotteryCapturer implements LotteryKind {
+use App\Models\LotteryResult;
+abstract class BaseLotteryCapturer implements LotteryKind {
     protected $lottery;
     //TODO
     protected $gameKeyMap = [];
@@ -21,7 +22,7 @@ class BaseLotteryCapturer implements LotteryKind {
      * [getWinningNumber description]
      * @return [type] [description]
      */
-    public function getWinningNumber();
+    abstract public function getWinningNumber();
 
     /**
      * [formatResult description]
@@ -31,11 +32,13 @@ class BaseLotteryCapturer implements LotteryKind {
     {
         $output = [];
         if ($data) {
+
             foreach ($data as $key => $value) {
                 $issueAt = $value[$this->resultColumnMapping['issue_at']] ?? '';
                 $numbers = $value[$this->resultColumnMapping['numbers']] ?? '';
+
                 $numbers = explode(',', $numbers);
-                $numbers = sort($numbers);
+                sort($numbers);
                 $numbers = implode(',', $numbers);
                 $output[$issueAt] = app(LotteryResult::class, ['issueAt' => $issueAt, 'numbers' => $numbers])->toArray();
             }

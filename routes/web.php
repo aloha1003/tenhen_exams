@@ -16,3 +16,12 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/test', 'Web\TestController@index');
+
+Route::group(['domain' => 'two.fake'], function ($domain) {
+	Route::get('/newly.do', 'Web\TwoFakeController@index');
+});
+Route::group(['domain' => 'one.fake'], function ($domain) {
+	Route::get('/v1', 'Web\OneFakeController@index');
+});

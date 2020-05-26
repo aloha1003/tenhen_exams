@@ -15,9 +15,10 @@ class UpdateWinningNumberJob implements ShouldQueue
 
 
     protected $lottery;
-
-    public function __construct(Lottery $lottery)
+    // 因为laravel 无法直接把ORM 物件丢进来, 所以传入的是阵列
+    public function __construct( $lottery)
     {
+
         $this->lottery = $lottery;
     }
 
@@ -29,11 +30,19 @@ class UpdateWinningNumberJob implements ShouldQueue
             // 北京11選5 = 2
             // $this->lottery->issue 為 string , 為此 lottery 期號（e.g. "20190903001"）
             // $target = new xxxx($this->lottery); // 請實現此 class
-            $target = app(LotteryService::class, ['lottery' => $this->lottery]);
-            $this->lottery->update([
-                'winning_number' => $target->getWinningNumber();
-            ]);
-        } catch (FetchFailureException $e) {
+            
+            $lottery = app(Lottery::class)->find($this->lottery['id']);
+            if ($lottery->status === Lottery::STATUS_NO) {  
+                $target = app(LotteryService::class, ['lottery' => $lottery]);
+                $number = $target->getWinningNumber();
+                $updateData = ['status' => Lottery::STATUS_YES, 'winning_number' => $number];
+                $lottery->update($updateData);    
+            } else {
+                throw new \Exception("該期已經提交,不用重覆刷新");
+            }
+            
+        } catch (Exception $e) {
+            
             Log::error('Something went wrong.');
         }
     }
