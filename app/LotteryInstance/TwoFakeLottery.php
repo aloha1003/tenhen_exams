@@ -36,6 +36,7 @@ class TwoFakeLottery extends BaseLotteryCapturer  {
                  CURLOPT_URL => $url,
                  CURLOPT_HEADER => false,
                  CURLOPT_POST => false ,
+                 CURLOPT_RETURNTRANSFER => true,
                 ];
 
         curl_setopt_array($ch, $options);
@@ -43,9 +44,11 @@ class TwoFakeLottery extends BaseLotteryCapturer  {
         $output = curl_exec($ch); 
         curl_close($ch);
         $this->validCurlResult($output);
-        $result = json_decode($curlResult, true);
+        $result = json_decode($output, true);
         $data = $result['data'];
+
         $formatResult = $this->formatResult($data);
+        
         return $formatResult[$this->lottery->issue] ?? '';
     }
 
@@ -60,12 +63,10 @@ class TwoFakeLottery extends BaseLotteryCapturer  {
 
       // correct json format
       // {"rows":3,"code":"cqssc","data":[{"expect":"20190902003","opencode":"3,8,1,9,5","opentime":"2019-09-02 01:12:46"},{"expect":"20190902002","opencode":"3,1,5,8,6","opentime":"2019-09-02 00:52:37"},{"expect":"20190902001","opencode":"6,1,9,0,3","opentime":"2019-09-02 00:32:03"}]}
-      if (!isset($result['result'])) {
+      if (!isset($result['data'])) {
           throw new \Exception("Illegal format result:".$curlResult); 
       }
-      if ($result['errorCode'] !== 0) {
-          throw new \Exception("Error is Happen:".$curlResult);    
-      }
+      
       
     }
 }

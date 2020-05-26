@@ -5,7 +5,7 @@
     docker-compose up -d 
 
 測試:
-  直接訪問 http://127.0.0.1:8080/test?game_id=1&issue=201909030031 
+  直接訪問 http://127.0.0.1:8080/test?game_id=1&issue=20190903003 
 
 
 

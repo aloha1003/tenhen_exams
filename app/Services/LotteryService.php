@@ -28,14 +28,18 @@ class LotteryService {
         }
         $resultIsOk = false;
         
-        foreach ($instancesMap as $key => $instanceName) {
-            $instance = '\App\LotteryInstance\\'.$instances['mainInstanceName'];
+        foreach ($instances['subInstaceNameList'] as $key => $instanceName) {
+            $instance = '\App\LotteryInstance\\'.$instanceName;
             if (!class_exists($instance)) {
                 Log::info('Log message', array('context' => '找不到副彩源:'.$instanceName));
                 continue;
             }
             $subInstance = app($instance, ['lottery' => $this->lottery]);
             $subResult = $subInstance->getWinningNumber();
+            if (!$subResult) {
+                Log::error('Not found 副彩源'.$instanceName.'還沒有'.$this->lottery->issue.'的資料。');
+                continue;
+            }
             //比对结果
             if ($subResult['numbers'] === $mainResult['numbers']) {
                 $resultIsOk = true;
